@@ -47,6 +47,8 @@ void ConVar_PluginStart()
 	Cvar[BossSapper] = CreateConVar("ff2_boss_sapper", "1", "If sappers can apply a slow on a boss similar to MvM.", _, true, 0.0, true, 1.0);
 	Cvar[PrefSpecial] = CreateConVar("ff2_pref_special", "0.0", "If non-zero, difficulties will be randomly applied onto a boss based on the chance set.", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	Cvar[Telefrags] = CreateConVar("ff2_game_telefrag", "5000", "How much damage telefrags do on bosses");
+	Cvar[SubpluginFolder] = CreateConVar("ff2_plugin_subplugins", "freaks", "Folder to load/unload when bosses are at play relative to the plugins folder.");
+	Cvar[FileCheck] = CreateConVar("ff2_plugin_checkfiles", "1", "If to check and warn about missing files from bosses. (Disabling this can help load times.)", _, true, 0.0, true, 1.0);
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
@@ -59,7 +61,6 @@ void ConVar_PluginStart()
 	Cvar[PreroundTime] = FindConVar("tf_arena_preround_time");
 	//Cvar[BonusRoundTime] = FindConVar("mp_bonusroundtime");
 	Cvar[Tournament] = FindConVar("mp_tournament");
-	Cvar[Tournament].Flags &= ~(FCVAR_NOTIFY|FCVAR_REPLICATED);
 	
 	CvarList = new ArrayList(sizeof(CvarInfo));
 	
@@ -101,7 +102,7 @@ static void GenerateConfig()
 	if(file)
 	{
 		file.WriteLine("// Settings present are for Freak Fortress 2: Rewrite (" ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION ... ")");
-		file.WriteLine("// Updating the plugin version will generate new ConVars and any non-FF2 commands will be lost");
+		file.WriteLine("// Updating the plugin version will generate new cvars and any non-FF2 commands will be lost");
 		file.WriteLine("ff2_version \"" ... PLUGIN_VERSION_FULL ... "\"");
 		file.WriteLine(NULL_STRING);
 		
@@ -116,9 +117,15 @@ static void GenerateConfig()
 			int current, split;
 			do
 			{
-				current += split;
 				split = SplitString(buffer1[current], "\n", buffer2, sizeof(buffer2));
+				if(split == -1)
+				{
+					file.WriteLine("// %s", buffer1[current]);
+					break;
+				}
+				
 				file.WriteLine("// %s", buffer2);
+				current += split;
 			}
 			while(split != -1);
 			
@@ -207,6 +214,7 @@ void ConVar_Enable()
 			info.cvar.AddChangeHook(ConVar_OnChanged);
 		}
 
+		Cvar[Tournament].Flags &= ~(FCVAR_NOTIFY|FCVAR_REPLICATED);
 		CvarHooked = true;
 	}
 }
@@ -225,6 +233,7 @@ void ConVar_Disable()
 			info.cvar.SetString(info.defaul);
 		}
 
+		Cvar[Tournament].Flags |= (FCVAR_NOTIFY|FCVAR_REPLICATED);
 		CvarHooked = false;
 	}
 }

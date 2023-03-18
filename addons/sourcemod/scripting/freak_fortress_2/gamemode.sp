@@ -35,6 +35,7 @@ void Gamemode_PluginStart()
 void Gamemode_MapStart()
 {
 	//TODO: If a round as been played before, Waiting for Players will never end - Late loading without players on breaks FF2 currently
+	RoundStatus = -1;
 	Waiting = true;
 	for(int i = 1; i <= MaxClients; i++)
 	{
@@ -821,10 +822,11 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 				
 				if(entity == -1)
 				{
-					entity = FindEntityByClassname(MaxClients+1, "monster_resource");
+					entity = FindEntityByClassname(-1, "monster_resource");
 					if(!maxcombined)
 					{
-						RemoveEntity(entity);
+						//if(entity != -1)
+						//	RemoveEntity(entity);
 					}
 					else
 					{
@@ -866,9 +868,9 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 			}
 			else if(lastCount < 3)
 			{
-				int entity = FindEntityByClassname(MaxClients+1, "monster_resource");
-				if(entity != -1)
-					RemoveEntity(entity);
+			//	int entity = FindEntityByClassname(-1, "monster_resource");
+			//	if(entity != -1)
+			//		RemoveEntity(entity);
 			}
 			
 			if(HudTimer[team])
@@ -1008,8 +1010,8 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 					{
 						show = true;
 						
-						int disguise = GetEntProp(aim, Prop_Send, "m_iDisguiseTargetIndex");
-						if(disguise > 0 && disguise <= MaxClients && IsClientInGame(disguise))
+						int disguise = GetEntPropEnt(aim, Prop_Send, "m_hDisguiseTarget");
+						if(disguise != -1)
 							aim = disguise;
 					}
 					
@@ -1071,8 +1073,8 @@ public Action Gamemode_DisguiseTimer(Handle timer, int userid)
 	int client = GetClientOfUserId(userid);
 	if(client && TF2_IsPlayerInCondition(client, TFCond_Disguised))
 	{
-		int target = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
-		if(target > 0 && target <= MaxClients && GetEntProp(target, Prop_Send, "m_iClass") == GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
+		int target = GetEntPropEnt(client, Prop_Send, "m_hDisguiseTarget");
+		if(target != -1 && GetEntProp(target, Prop_Send, "m_iClass") == GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
 		{
 			bool team = view_as<bool>(GetClientTeam(client) % 2);
 			
